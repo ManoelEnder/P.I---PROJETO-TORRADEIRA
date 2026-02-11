@@ -8,6 +8,8 @@ public class PhotoCamera : MonoBehaviour
     public Camera photoCam;
     public Camera playerCam;
     public RawImage photoPreview;
+    public GameObject[] temporalObjects;
+
 
     RenderTexture rt;
     Texture2D photo;
@@ -52,8 +54,12 @@ public class PhotoCamera : MonoBehaviour
         photoPreview.texture = photo;
         photoPreview.gameObject.SetActive(true);
 
+        foreach (GameObject obj in temporalObjects)
+            obj.SetActive(true);
+
         StartCoroutine(HidePreview());
     }
+
 
     IEnumerator HidePreview()
     {
