@@ -9,10 +9,13 @@ public class PhotoCamera : MonoBehaviour
     public Camera playerCam;
     public RawImage photoPreview;
     public GameObject[] temporalObjects;
+    public GameObject flashObject;
 
+    public float cooldown = 2f;
 
     RenderTexture rt;
     Texture2D photo;
+    bool canShoot = true;
 
     void Start()
     {
@@ -20,19 +23,22 @@ public class PhotoCamera : MonoBehaviour
         photoCam.targetTexture = rt;
         photoCam.enabled = false;
         photoPreview.gameObject.SetActive(false);
+
+        if (flashObject != null)
+            flashObject.SetActive(false);
     }
 
     void Update()
     {
-        if (Mouse.current.leftButton.wasPressedThisFrame)
+        if (Mouse.current.leftButton.wasPressedThisFrame && canShoot)
         {
-            TakePhoto();
+            StartCoroutine(TakePhoto());
         }
     }
 
-    void TakePhoto()
+    IEnumerator TakePhoto()
     {
-        StopAllCoroutines();
+        canShoot = false;
 
         transform.SetPositionAndRotation(
             playerCam.transform.position,
@@ -41,9 +47,17 @@ public class PhotoCamera : MonoBehaviour
 
         photoCam.fieldOfView = playerCam.fieldOfView;
 
+        if (flashObject != null)
+            flashObject.SetActive(true);
+
+        yield return new WaitForSeconds(0.05f);
+
         photoCam.enabled = true;
         photoCam.Render();
         photoCam.enabled = false;
+
+        if (flashObject != null)
+            flashObject.SetActive(false);
 
         RenderTexture.active = rt;
         photo = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
@@ -57,13 +71,14 @@ public class PhotoCamera : MonoBehaviour
         foreach (GameObject obj in temporalObjects)
             obj.SetActive(true);
 
-        StartCoroutine(HidePreview());
-    }
-
-
-    IEnumerator HidePreview()
-    {
         yield return new WaitForSeconds(2f);
+
         photoPreview.gameObject.SetActive(false);
+
+        foreach (GameObject obj in temporalObjects)
+            obj.SetActive(false);
+
+        yield return new WaitForSeconds(cooldown);
+        canShoot = true;
     }
 }
