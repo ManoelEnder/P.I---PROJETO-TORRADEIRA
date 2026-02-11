@@ -9,9 +9,10 @@ public class PhotoCamera : MonoBehaviour
     public Camera playerCam;
     public RawImage photoPreview;
     public GameObject[] temporalObjects;
-    public GameObject flashObject;
+    public Image flashImage;
 
     public float cooldown = 2f;
+    public float flashDuration = 0.2f;
 
     RenderTexture rt;
     Texture2D photo;
@@ -24,8 +25,12 @@ public class PhotoCamera : MonoBehaviour
         photoCam.enabled = false;
         photoPreview.gameObject.SetActive(false);
 
-        if (flashObject != null)
-            flashObject.SetActive(false);
+        if (flashImage != null)
+        {
+            Color c = flashImage.color;
+            c.a = 0f;
+            flashImage.color = c;
+        }
     }
 
     void Update()
@@ -47,17 +52,15 @@ public class PhotoCamera : MonoBehaviour
 
         photoCam.fieldOfView = playerCam.fieldOfView;
 
-        if (flashObject != null)
-            flashObject.SetActive(true);
-
-        yield return new WaitForSeconds(0.05f);
-
         photoCam.enabled = true;
         photoCam.Render();
         photoCam.enabled = false;
 
-        if (flashObject != null)
-            flashObject.SetActive(false);
+        yield return null;
+
+        StartCoroutine(FlashEffect());
+
+
 
         RenderTexture.active = rt;
         photo = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
@@ -72,13 +75,35 @@ public class PhotoCamera : MonoBehaviour
             obj.SetActive(true);
 
         yield return new WaitForSeconds(2f);
-
         photoPreview.gameObject.SetActive(false);
-
-        foreach (GameObject obj in temporalObjects)
-            obj.SetActive(false);
 
         yield return new WaitForSeconds(cooldown);
         canShoot = true;
+    }
+
+    IEnumerator FlashEffect()
+    {
+        float t = 0f;
+
+        if (flashImage == null)
+            yield break;
+
+        Color c = flashImage.color;
+        c.a = 1f;
+        flashImage.color = c;
+
+        while (t < flashDuration)
+        {
+            t += Time.deltaTime;
+            float lerp = t / flashDuration;
+
+            c.a = Mathf.Lerp(1f, 0f, lerp);
+            flashImage.color = c;
+
+            yield return null;
+        }
+
+        c.a = 0f;
+        flashImage.color = c;
     }
 }
